@@ -1,0 +1,39 @@
+ensure_start: true
+script:
+  workspace:
+    description: 'Creating backup workspace'
+    sudo: true
+    commands:
+      - 'rm -fr {bck_workspace}*'
+      - 'mkdir -p {bck_workspace}'
+  pgdump:
+    description: 'Creating PostgreSQL dump'
+    sudo: true
+    commands:
+      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -T db pg_dump -U odoo -d {database} --no-owner > {bck_workspace}/dump.sql'
+  filestore:
+    description: 'Copying Odoo filestore'
+    sudo: true
+    commands:
+      - 'docker-compose -f {branch_workspace}/docker-compose.yml cp web:/var/lib/odoo/filestore/{database} {bck_workspace}/filestore'
+  zip:
+    description: 'Creating zip file'
+    commands:
+      - 'su -c "cd {bck_dir}/{bck_name} && zip -4 -r ../{bck_name}.zip ./ &>/dev/null"'
+  rm_workspace:
+    description: 'Removing backup workspace'
+    sudo: true
+    commands:
+      - 'rm -dfr {bck_workspace}'
+  aws_s3:
+    description: 'Uploading to AWS s3'
+    sudo: true
+    commands:
+      - 'aws configure set aws_access_key_id {STORAGE_ACCESS_KEY}'
+      - 'aws configure set aws_secret_access_key {STORAGE_SECRET_KEY}'
+      - 'aws s3 cp {bck_dir}/{bck_name}.zip s3://{storage_name}/{STORAGE_BCK_PATH}/{branch_name}/{bck_name}.zip --region {STORAGE_REGION}'
+  rm_backup:
+    description: 'Cleaning local backup file'
+    sudo: true
+    commands:
+      - 'rm -dfr {bck_dir}/{bck_name}.zip'
