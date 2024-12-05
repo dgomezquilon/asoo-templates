@@ -11,7 +11,7 @@ script:
     description: 'Decompressing backup'
     sudo: true
     commands:
-      - 'unzip {bck_dir}/{object_short_key} -d {bck_dir}/{object_short} &>/dev/null'
+      - 'unzip -o {bck_dir}/{object_short_key} -d {bck_dir}/{object_short} &>/dev/null'
       - 'rm -fr {bck_dir}/{object_short_key}'
   pgdump:
     description: 'Restoring PostgreSQL dump'
@@ -41,7 +41,7 @@ script:
       - |
         docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_cron SET active = false"
       - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE fetchmail_server SET state = 'draft'"
+        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fetchmail_server') THEN UPDATE fetchmail_server SET state = 'draft'; END IF; END \$\$;"
       - |
         docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_mail_server SET active = false"
       - |
