@@ -1,6 +1,6 @@
 services:
   web:
-    image: dgomezquilon46/odoo:17.0
+    image: dgomezindaws/odoo:15.0
     restart: always
     depends_on:
       - db
