@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+
+
+def get_database():
+    QUERY = "select datname from pg_database where datdba=(select usesysid from pg_user where usename=current_user) and not datistemplate and datallowconn and datname not in ('template0', 'postgres') order by datname"
+    cmd = [
+        'docker-compose',
+        'exec',
+        'db',
+        'psql',
+        '-U odoo',
+        '-d postgres',
+        '-t',
+        '-c "{}"'.format(QUERY),
+    ]
+    result = subprocess.run(
+        ' '.join(cmd),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=True
+    )
+    databases = [
+        db.strip() for db in result.stdout.split('\n') if db.strip()
+    ]
+    return databases[0] if databases else False
+
+
+def execute_psql():
+    database = get_database() or 'postgres'
+    cmd = [
+        'docker-compose',
+        'exec',
+        'db',
+        'psql',
+        '-U odoo',
+        '-d {}'.format(database)
+    ]
+    os.system(' '.join(cmd))
+
+
+if __name__ == "__main__":
+    execute_psql()

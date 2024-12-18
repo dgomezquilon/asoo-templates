@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description="Odoo module update")
+parser.add_argument(
+    'module',
+    type=str,
+    help="Technical name of the odoo module that is going to be updated."
+)
+args = parser.parse_args()
+module = args.module
+
+
+def get_database():
+    QUERY = "select datname from pg_database where datdba=(select usesysid from pg_user where usename=current_user) and not datistemplate and datallowconn and datname not in ('template0', 'postgres') order by datname"
+    cmd = [
+        'docker-compose',
+        'exec',
+        'db',
+        'psql',
+        '-U odoo',
+        '-d postgres',
+        '-t',
+        '-c "{}"'.format(QUERY),
+    ]
+    result = subprocess.run(
+        ' '.join(cmd),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=True
+    )
+    databases = [
+        db.strip() for db in result.stdout.split('\n') if db.strip()
+    ]
+    return databases[0] if databases else False
+
+
+def execute_update():
+    database = get_database()
+    if not database:
+        return print('Error: The odoo instance has no database.')
+    cmd = [
+        'docker-compose',
+        'exec',
+        '-u odoo',
+        'web',
+        'odoo',
+        '-c /etc/odoo/odoo.conf',
+        '-d {}'.format(database),
+        '-u {}'.format(module),
+        '--no-http',
+        '--stop-after-init'
+    ]
+    os.system(' '.join(cmd))
+
+
+if __name__ == "__main__":
+    if module:
+        execute_update()
+    else:
+        print('No module indicates')
