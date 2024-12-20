@@ -35,7 +35,7 @@ script:
       - 'staging'
     sudo: true
     commands:
-      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -u odoo web odoo neutralize -d {database} -c /etc/odoo/odoo.conf --stop-after-init --no-http'
+      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -u odoo web odoo neutralize -d {database} --stop-after-init --no-http'
   clean:
     description: 'Cleaning leftovers from the backup'
     sudo: true
