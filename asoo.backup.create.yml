@@ -19,7 +19,7 @@ script:
   zip:
     description: 'Creating zip file'
     commands:
-      - 'su -c "cd {bck_dir}/{bck_name} && zip -4 -r ../{bck_name}.zip ./ &>/dev/null"'
+      - 'su -c "cd {bck_dir}/{bck_name} && zip -r ../{bck_name}.zip ./ &>/dev/null"'
   rm_workspace:
     description: 'Removing backup workspace'
     sudo: true
@@ -29,6 +29,7 @@ script:
     description: 'Uploading to AWS s3'
     sudo: true
     commands:
+      - 'aws configure set endpoint_url {STORAGE_ENDPOINT}'
       - 'aws configure set aws_access_key_id {STORAGE_ACCESS_KEY}'
       - 'aws configure set aws_secret_access_key {STORAGE_SECRET_KEY}'
       - 'aws s3 cp {bck_dir}/{bck_name}.zip s3://{storage_name}/{STORAGE_BCK_PATH}/{branch_name}/{bck_name}.zip --region {STORAGE_REGION}'

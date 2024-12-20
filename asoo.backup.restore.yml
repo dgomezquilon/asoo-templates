@@ -4,6 +4,7 @@ script:
     sudo: true
     commands:
       - 'rm -fr {bck_workspace}*'
+      - 'aws configure set endpoint_url {STORAGE_ENDPOINT}'
       - 'aws configure set aws_access_key_id {STORAGE_ACCESS_KEY}'
       - 'aws configure set aws_secret_access_key {STORAGE_SECRET_KEY}'
       - 'aws s3 cp s3://{storage_name}/{object_key} {bck_dir}/{object_short_key} --region {STORAGE_REGION}'
@@ -28,32 +29,13 @@ script:
       - 'docker-compose -f {branch_workspace}/docker-compose.yml cp {bck_dir}/{object_short}/filestore/. web:/var/lib/odoo/filestore/{database}'
       - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -T -u 0 web chown -R odoo:odoo /var/lib/odoo/filestore/{database}'
   prepare:
-    description: 'Database test mode'
+    description: 'Neutralize database'
     stages:
       - 'development'
       - 'staging'
     sudo: true
     commands:
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_config_parameter SET value = '{database_uuid}' WHERE key IN ('database.uuid', 'origin.database.uuid')"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_config_parameter SET value = '{database_secret}' WHERE key = 'database.secret'"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_cron SET active = false"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fetchmail_server') THEN UPDATE fetchmail_server SET state = 'draft'; END IF; END \$\$;"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_mail_server SET active = false"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "INSERT INTO ir_mail_server (\"name\", \"smtp_host\", \"smtp_port\", \"smtp_authentication\", \"smtp_encryption\", \"active\", \"sequence\") VALUES ('disable outgoing servers', 'localhost', 0, '0', 'ssl', true, 0)"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "DELETE FROM ir_config_parameter WHERE key = 'database.enterprise_code'"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_config_parameter SET value = '{database_create_date}' WHERE key = 'database.create_date'"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_config_parameter SET value = '{database_expiration_date}' WHERE key = 'database.expiration_date'"
-      - |
-        docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} -t -c "UPDATE ir_config_parameter SET value = 'trial' WHERE key = 'database.expiration_reason'"
+      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -u odoo web odoo neutralize -d {database} -c /etc/odoo/odoo.conf --stop-after-init --no-http'
   clean:
     description: 'Cleaning leftovers from the backup'
     sudo: true
