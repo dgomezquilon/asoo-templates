@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import os
+import argparse
+
+parser = argparse.ArgumentParser(description="Odoo bash")
+parser.add_argument(
+    'user',
+    type=str,
+    help="0 - root, odoo - odoo user",
+    default='0'
+)
+args = parser.parse_args()
+user = args.user
+
+
+def execute_bash(user):
+    cmd = [
+        'docker-compose',
+        'exec',
+        '-u {}'.format(user),
+        'web',
+        'bash'
+    ]
+    os.system(' '.join(cmd))
+
+
+if __name__ == "__main__":
+    execute_bash(user)

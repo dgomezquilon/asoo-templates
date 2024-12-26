@@ -18,7 +18,7 @@ script:
     description: 'Restoring PostgreSQL dump'
     sudo: true
     commands:
-      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d postgres -t -c "CREATE DATABASE {database}"'
+      - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d postgres -t -c "CREATE DATABASE \"{database}\""'
       - 'docker-compose -f {branch_workspace}/docker-compose.yml exec -T db psql -U odoo -d {database} < {bck_dir}/{object_short}/dump.sql'
       - 'rm -fr {bck_dir}/{object_short}/dump.sql'
   filestore:

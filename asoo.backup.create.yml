@@ -25,8 +25,8 @@ script:
     sudo: true
     commands:
       - 'rm -dfr {bck_workspace}'
-  aws_s3:
-    description: 'Uploading to AWS s3'
+  cloudflare_r2_upload:
+    description: 'Uploading to Cloudflare R2'
     sudo: true
     commands:
       - 'aws configure set endpoint_url {STORAGE_ENDPOINT}'
